@@ -1,38 +1,20 @@
 FROM java:8-jre
 
-ENV PATH /usr/local/tomee/bin:$PATH
-RUN mkdir -p /usr/local/tomee
+ENV TOMEE_VERSION 7.0.2
+ENV TOMEE_DISTRIBUTION plus
 
-WORKDIR /usr/local/tomee
+ENV TOMEE_URL http://repo.maven.apache.org/maven2/org/apache/tomee/apache-tomee/$TOMEE_VERSION/apache-tomee-$TOMEE_VERSION-$TOMEE_DISTRIBUTION.tar.gz
+ENV TOMEE_HOME /opt/tomee
+ENV TOMEE_PORT 8080
 
-# curl -fsSL 'https://www.apache.org/dist/tomee/KEYS' | awk -F ' = ' '$1 ~ /^ +Key fingerprint$/ { gsub(" ", "", $2); print $2 }' | sort -u
-ENV GPG_KEYS \
-	BDD0BBEB753192957EFC5F896A62FC8EF17D8FEF \
-	223D3A74B068ECA354DC385CE126833F9CF64915 \
-	7A2744A8A9AAF063C23EB7868EBE7DBE8D050EEF \
-	82D8419BA697F0E7FB85916EE91287822FDB81B1 \
-	9056B710F1E332780DE7AF34CBAEBE39A46C4CA1 \
-	A57DAF81C1B69921F4BA8723A8DE0A4DB863A7C1 \
-	B7574789F5018690043E6DD9C212662E12F3E1DD \
-	B8B301E6105DF628076BD92C5483E55897ABD9B9 \
-	DBCCD103B8B24F86FFAAB025C8BB472CD297D428 \
-	F067B8140F5DD80E1D3B5D92318242FE9A0B1183 \
-	FAA603D58B1BA4EDF65896D0ED340E0E6D545F97
-RUN set -xe \
-	&& for key in $GPG_KEYS; do \
-		gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-	done
+WORKDIR /opt
 
-RUN set -x \
-	&& curl -fSL http://repo.maven.apache.org/maven2/org/apache/tomee/apache-tomee/7.0.1/apache-tomee-7.0.1-plus.tar.gz.asc -o tomee.tar.gz.asc \
-	&& curl -fSL http://repo.maven.apache.org/maven2/org/apache/tomee/apache-tomee/7.0.1/apache-tomee-7.0.1-plus.tar.gz -o tomee.tar.gz \
-	&& gpg --batch --verify tomee.tar.gz.asc tomee.tar.gz \
-	&& tar -zxf tomee.tar.gz \
-	&& mv apache-tomee-plus-7.0.1/* /usr/local/tomee \
-	&& rm -Rf apache-tomee-plus-7.0.1 \
-	&& rm bin/*.bat \
-	&& rm tomee.tar.gz*
+RUN wget -O - $TOMEE_URL | tar zxf - && \
+    mv /opt/apache-tomee-$TOMEE_DISTRIBUTION-$TOMEE_VERSION $TOMEE_HOME
 
+ENV PATH $TOMEE_HOME/bin:$PATH
 
-EXPOSE 8080
+WORKDIR $TOMEE_HOME
+
+EXPOSE $TOMEE_PORT
 CMD ["catalina.sh", "run"]

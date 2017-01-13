@@ -1,17 +1,19 @@
----
-
 - hosts: localhost
-  connection: local
-  vars_files:
-    - vars/main.yml
+  vars:
+    tomee_version: 7.0.2
+    tomee_distribution: plus
   tasks:
-    - name: build image
-      command: "docker build -t {{ image_name }} ."
+    - set_fact:
+        tomee_image: jeqo/apache-tomee:{{ tomee_distribution }}-{{ tomee_version }}
 
-    - name: docker tag
-      command: "docker tag {{ image_name }} {{ image_name }}:{{ item }}"
-      with_items: "{{ tags }}"
+    - name: building {{ tomee_image }}
+      docker_image:
+        name: "{{ tomee_image }}"
+        path: .
+        force: yes
+        nocache: yes
+        push: yes
+      register: result
 
-    - name: docker push
-      command: "docker push {{ image_name }}:{{ item }}"
-      with_items: "{{ tags }}"
+    - debug:
+        var: result
